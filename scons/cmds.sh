@@ -19,6 +19,9 @@ perl bin/CIRI_simulator.pl -O reads/cirias -G /blackhole/circrna/analyses/ccp_tu
 sed "s_/[12]__" reads/cirias_1.fq | gzip -c > reads/cirias_1.fq.gz
 sed "s_/[12]__" reads/cirias_2.fq | gzip -c > reads/cirias_2.fq.gz
 
+## generate true positive circRNA table
+./utils/ciri_sim_parser.py -i reads/cirias.out -o reads/cirias_tp.csv
+
 ########################
 # 2. get transcripts names from which circRNAs were simulated
 ########################
