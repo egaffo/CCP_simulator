@@ -15,8 +15,9 @@ mkdir reads
 ## run simulation
 perl bin/CIRI_simulator.pl -O reads/cirias -G /blackhole/circrna/analyses/ccp_tuning/annotation/gencode.v29.annotation.gtf -C 20 -LC 0 -R 1 -LR 1 -L 101 -E 1 -D /blackhole/circrna/analyses/ccp_tuning/annotation/ -CHR1 1 -M 250 -M2 450 -PM 0 -S 70 -S2 0 -SE 0 -PSI 10
 
-gzip reads/cirias_1.fq
-gzip reads/cirias_2.fq
+## remove read mate id from read headers
+sed "s_/[12]__" reads/cirias_1.fq | gzip -c > reads/cirias_1.fq.gz
+sed "s_/[12]__" reads/cirias_2.fq | gzip -c > reads/cirias_2.fq.gz
 
 ########################
 # 2. get transcripts names from which circRNAs were simulated
@@ -41,17 +42,14 @@ grep gene_id  reads/cirias.out | sed -r 's/.*gene_id "([^"]+)".*/\1/' | head -50
 
 cat annotation/anno_n_xprd_genes.txt annotation/unknown_but_xprd_genes.txt > annotation/lin_trx_read_genes.txt
 
-## get transcript ids
-grep "^chr" reads/cirias.out | cut -f 3 | sort | uniq > annotation/cirisimTrx.txt
-
 ## get annotation to produce transcript fasta. NB: from full annotation select only 
 ## circRNA linear transcripts and discard other isoforms of the same gene to save 
 ## time in downstrem analysis
-grep -w "exon\|transcript" /blackhole/circrna/analyses/ccp_tuning/annotation/chr1.gencode.v29.annotation.gtf | grep -f annotation/lin_trx_read_genes.txt | grep -f annotation/cirisimTrx.txt > annotation/lin_trx_read_genes.gtf
+grep -w "exon\|transcript" /blackhole/circrna/analyses/ccp_tuning/annotation/chr1.gencode.v29.annotation.gtf | grep -f annotation/lin_trx_read_genes.txt | grep -f annotation/circTrx.txt > annotation/lin_trx_read_genes.gtf
 
 ## the following FASTA file will be not necessary when Polyester R script 
 ## will consider the GTF of interest: get transcripts sequences in FASTA
-gffread annotation/lin_trx_read_genes.gtf -w annotation/lin_trx_read_genes.fa -g /blackhole/circrna/analyses/ccp_tuning/annotation/chr1.fa
+bin/gffread annotation/lin_trx_read_genes.gtf -w annotation/lin_trx_read_genes.fa -g /blackhole/circrna/analyses/ccp_tuning/annotation/chr1.fa
 ## set FASTA in onle-line sequence entries
 awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' < annotation/lin_trx_read_genes.fa | tail -n +2 > annotation/lin_trx_read_genes_oneline.fa
 
@@ -97,7 +95,9 @@ cat annotation/anno_n_xprd_genes.txt annotation/known_not_xprd_genes.txt > annot
 
 ## generate annotation file without the annotation of the genes selected above 
 grep -f annotation/genes_to_keep.txt /blackhole/circrna/analyses/ccp_tuning/annotation/chr1.gencode.v29.annotation.gtf | grep -f annotation/cirisimTrx.txt > annotation/pruned.chr1.gencode.v29.annotation.trx.gtf
-grep -f annotation/genes_to_keep.txt /blackhole/circrna/analyses/ccp_tuning/annotation/chr1.gencode.v29.annotation.gtf | grep -w gene >> annotation/pruned.chr1.gencode.v29.annotation.trx.gtf
-sort -k1,1 -k4,4n -k5,5n annotation/pruned.chr1.gencode.v29.annotation.trx.gtf > annotation/pruned.chr1.gencode.v29.annotation.gtf 
+
+grep -f annotation/genes_to_keep.txt /blackhole/circrna/analyses/ccp_tuning/annotation/chr1.gencode.v29.annotation.gtf | grep -w gene > annotation/pruned.chr1.gencode.v29.annotation.genes.gtf
+
+cat annotation/pruned.chr1.gencode.v29.annotation.genes.gtf annotation/pruned.chr1.gencode.v29.annotation.trx.gtf | sort -k1,1 -k4,4n -k5,5n > annotation/pruned.chr1.gencode.v29.annotation.gtf 
 
 
