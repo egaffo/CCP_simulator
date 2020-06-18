@@ -41,6 +41,7 @@ env.SetDefault(CIRI_SIM_OPT = ['-C',   20, #coverage or max coverage (when choos
                        '-PSI', 10] #percentage of splice in for skipping exon(-SE should be 1)
                        )
 
+env.SetDefault(BIOTYPE = 'trx') ## alternative is 'gene'
 
 #############################
 # 1. simulate circRNA reads #
@@ -111,7 +112,11 @@ cirisim_pred = env.Command(cirisim_pred_tgt,
 
 cirisim_trx_tgt = [os.path.join(cirisim_pred_dir, 'circ_trx.txt')]
 cirisim_trx_src = [cirisim[2]]
-cirisim_trx_cmd = 'grep "^chr" $SOURCE | cut -f 3 | sort | uniq > $TARGET'
+if env['BIOTYPE'] == 'trx':
+    cut_field = '3'
+else:
+    cut_field = '2'
+cirisim_trx_cmd = 'grep "^chr" $SOURCE | cut -f ' + cut_field + ' | sort | uniq > $TARGET'
 
 cirisim_trx = env.Command(cirisim_trx_tgt, 
                           cirisim_trx_src,
@@ -121,25 +126,14 @@ cirisim_trx = env.Command(cirisim_trx_tgt,
 ########################################
 # 3. generate the transcripts FASTA(s) #
 ########################################
+ccp_anno_dir = 'ccp_anno'
+pruned_anno_cmd = 'parent_gene_fasta.py -t ${SOURCES[0]} -g ${SOURCES[1]} -b $BIOTYPE -o ' + ccp_anno_dir
+pruned_anno = env.Command([os.path.join(ccp_anno_dir, f) for f in ['annotation4fasta.gtf', 
+                                                                   'annotation4simulations.gtf', 
+                                                                   'summary.txt']], 
+                          [cirisim_trx, env['GENE_ANNO']], 
+                          pruned_anno_cmd)
 
-### (optional) select only a subset of transcripts to simulate
-### linear reads in order to mimic the cases: 
-### (i)  annotated and expressed linear trx
-### (ii) not annotated but expressed linear trx
-#
-## (i) 90% of 587 = 528 transcripts/genes
-#grep gene_id  reads/sim_01/cirias.out | sed -r 's/.*gene_id "([^"]+)".*/\1/' | head -528 > annotation/sim_01/anno_n_xprd_genes.txt
-#
-## (ii) 5% of 587 = 29 transcripts/genes (520+29=557)
-#grep gene_id  reads/sim_01/cirias.out | sed -r 's/.*gene_id "([^"]+)".*/\1/' | head -557 | tail -29 > annotation/sim_01/unknown_but_xprd_genes.txt
-#
-#cat annotation/sim_01/anno_n_xprd_genes.txt annotation/sim_01/unknown_but_xprd_genes.txt > annotation/sim_01/lin_trx_read_genes.txt
-#
-### get annotation to produce transcript fasta. NB: from full annotation select only 
-### circRNA linear transcripts and discard other isoforms of the same gene to save 
-### time in downstrem analysis
-#grep -w "exon\|transcript" /blackhole/circrna/analyses/ccp_tuning/annotation/chr1.gencode.v29.annotation.gtf | grep -f annotation/sim_01/lin_trx_read_genes.txt | grep -f annotation/sim_01/circTrx.txt > annotation/sim_01/lin_trx_read_genes.gtf
-#
 ### the following FASTA file will be not necessary when Polyester R script 
 ### will consider the GTF of interest: get transcripts sequences in FASTA
 #bin/gffread annotation/sim_01/lin_trx_read_genes.gtf -w annotation/sim_01/lin_trx_read_genes.fa -g /blackhole/circrna/analyses/ccp_tuning/annotation/chr1.fa
