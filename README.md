@@ -41,3 +41,27 @@ REFSEQ_DIR: Directory of reference sequence(s)
 CIRI_SIM_OPT: Options for the CIRI_simulator.pl script
     default: -C 20 -LC 0 -R 1 -LR 1 -L 101 -E 1 -CHR1 1 -M 250 -M2 450 -PM 0 -S 70 -S2 0 -SE 0 -PSI 10
 ```
+
+## Output
+
+### Reads
+
+Simulated reads will be in the `ccp_reads` directory.  
+Simulated circular RNAs with read counts are saved in the `cirisim_pred/cirias_tp.csv` table.  
+
+### Annotation 
+
+Processed annotation is saved in the `ccp_anno/annotation4simulations.gtf` file.
+Summary counts and annotation status for each annotated transcript are saved in the `ccp_anno/summary.txt` file. Annotation cases refer to the table below:  
+
+-------------------------------------------------------------------------------
+case | circRNA expression | linear trx expression | linear trx annotation | meaning
+-----|--------------------|-----------------------|----------------------|----------
+  1  |  yes               | yes                   | yes                  | circRNA from expressed known trx  
+  2  |  yes               | yes        | no         | circRNA from novel trx
+  3  |  yes               | no         | yes        | only circRNA from known trx
+  4  |  yes               | no         | no         | novel circRNA gene
+  5  |  no                | yes        | yes        | just no circRNA
+  6  |  no                | yes        | no         | only novel trx
+  7  |  no                | no         | yes        | known trx not expressed
+  8  |  no                | no         | no         | nothing expressed, nothing known 
