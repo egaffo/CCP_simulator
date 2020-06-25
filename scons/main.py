@@ -154,7 +154,10 @@ pruned_anno = env.Command([os.path.join(ccp_anno_dir, f) for f in ['annotation4f
 linreads_dir = 'lin_reads'
 sim_lin_cmd = 'simulate_linear_trx_reads.R -f ${SOURCES[0]} -g ${SOURCES[1]} -o ${TARGETS[0].dir}'
 sim_lin = env.Command([os.path.join(linreads_dir, f) for f in ['sample_01_1.fasta', 
-                                                               'sample_01_2.fasta']], 
+                                                               'sample_01_2.fasta',
+                                                               'sim_counts_matrix.rda',
+                                                               'sim_rep_info.txt',
+                                                               'sim_tx_info.txt']], 
                        [env['REFSEQ_DIR'], pruned_anno[0]], 
                        ' && '.join([sim_lin_cmd, 
                                     'rm ' + ' '.join([os.path.join(linreads_dir, f) for f in ['sample_02_1.fasta', 
@@ -166,10 +169,7 @@ sim_lin = env.Command([os.path.join(linreads_dir, f) for f in ['sample_01_1.fast
 #########################
 ## 5. Convert FASTA into FASTQ
 #########################
-#
-#./utils/fasta2fastq.py reads/sim_01/sample_01_1.fasta | gzip -c > reads/sim_01/sample_01_1.fq.gz
-#./utils/fasta2fastq.py reads/sim_01/sample_01_2.fasta | gzip -c > reads/sim_01/sample_01_2.fq.gz
-#
+
 fasta2fastq_cmd = 'fasta2fastq.py $SOURCE | gzip -c > $TARGET'
 fasta2fastq1 = env.Command(os.path.join(linreads_dir, '${SOURCES[0].filebase}.fq.gz'), #'sample_01_1.fq.gz'
                            sim_lin[0], 
@@ -181,30 +181,16 @@ fasta2fastq2 = env.Command(os.path.join(linreads_dir, '${SOURCES[0].filebase}.fq
 #########################
 ## 6. concatenate circular and linear reads
 #########################
-#cat reads/sim_01/cirias_1.fq.gz reads/sim_01/sample_01_1.fq.gz > reads/sim_01/sim_ribo_01_1.fq.gz
-#cat reads/sim_01/cirias_2.fq.gz reads/sim_01/sample_01_2.fq.gz > reads/sim_01/sim_ribo_01_2.fq.gz
-#
-#
-#########################
-## 7. prune original annotation to simulate unknown transcripts
-#########################
-#
-### select 
-### (i)   90% of genes that was used to generate circRNA reads by circ_simulator, plus 
-### (ii)   5% of not expressed linear transcripts/genes, and exclude 
-### (iii)  2.5% annotation that will mimic linear transcript expressed but not annotated. Also, exclude
-### (iv)   2.5% annotation that will mimic expressed circRNAs with no annotation and no lin trx expressed
-#
-## (ii) 528+29+15=572
-#grep gene_id  reads/sim_01/cirias.out | sed -r 's/.*gene_id "([^"]+)".*/\1/' | head -572 | tail -15 > annotation/sim_01/known_not_xprd_genes.txt
-#
-#cat annotation/sim_01/anno_n_xprd_genes.txt annotation/sim_01/known_not_xprd_genes.txt > annotation/sim_01/genes_to_keep.txt
-#
-### generate annotation file without the annotation of the genes selected above 
-#grep -f annotation/sim_01/genes_to_keep.txt /blackhole/circrna/analyses/ccp_tuning/annotation/chr1.gencode.v29.annotation.gtf | grep -f annotation/sim_01/circTrx.txt > annotation/sim_01/pruned.chr1.gencode.v29.annotation.trx.gtf
-#
-#grep -f annotation/sim_01/genes_to_keep.txt /blackhole/circrna/analyses/ccp_tuning/annotation/chr1.gencode.v29.annotation.gtf | grep -w gene > annotation/sim_01/pruned.chr1.gencode.v29.annotation.genes.gtf
-#
-#cat annotation/sim_01/pruned.chr1.gencode.v29.annotation.genes.gtf annotation/sim_01/pruned.chr1.gencode.v29.annotation.trx.gtf | sort -k1,1 -k4,4n -k5,5n > annotation/sim_01/pruned.chr1.gencode.v29.annotation.gtf 
-#
-#
+# cat reads/sim_01/cirias_1.fq.gz reads/sim_01/sample_01_1.fq.gz > reads/sim_01/sim_ribo_01_1.fq.gz
+# cat reads/sim_01/cirias_2.fq.gz reads/sim_01/sample_01_2.fq.gz > reads/sim_01/sim_ribo_01_2.fq.gz
+
+cat_reads_cmd = 'cat ${SOURCES[0]} ${SOURCES[1]} > $TARGET'
+
+ccp_reads_dir = 'ccp_reads'
+cat_reads_1 = env.Command(os.path.join(ccp_reads_dir, 'sim_ribodplt_1.fq.gz'), 
+                          [cirisim[0], fasta2fastq1], 
+                          cat_reads_cmd)
+            
+cat_reads_2 = env.Command(os.path.join(ccp_reads_dir, 'sim_ribodplt_2.fq.gz'), 
+                          [cirisim[1], fasta2fastq2], 
+                          cat_reads_cmd)
