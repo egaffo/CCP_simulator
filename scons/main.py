@@ -134,18 +134,35 @@ pruned_anno = env.Command([os.path.join(ccp_anno_dir, f) for f in ['annotation4f
                           [cirisim_trx, env['GENE_ANNO']], 
                           pruned_anno_cmd)
 
+#########################
+## 4. simulate linear reads from the transcripts by means of polyester
+#########################
+
 ### the following FASTA file will be not necessary when Polyester R script 
 ### will consider the GTF of interest: get transcripts sequences in FASTA
 #bin/gffread annotation/sim_01/lin_trx_read_genes.gtf -w annotation/sim_01/lin_trx_read_genes.fa -g /blackhole/circrna/analyses/ccp_tuning/annotation/chr1.fa
 ### set FASTA in onle-line sequence entries
 #awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' < annotation/sim_01/lin_trx_read_genes.fa | tail -n +2 > annotation/sim_01/lin_trx_read_genes_oneline.fa
 #
-#########################
-## 4. simulate linear reads from the transcripts by means of polyester
-#########################
-#
-#./utils/simulate_linear_trx_reads.R -f annotation/sim_01/lin_trx_read_genes_oneline.fa -o reads/sim_01
-#
+
+# fasta_seq_cmd1 = 'gffread ${SOURCES[0]} -w ${TARGETS[0]} -g ${SOURCES[1]}'
+# fasta_seq_cmd2 = '''awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);} END {printf("\n");}' < ${TARGETS[0]} | tail -n +2 > ${TARGETS[1]}'''
+# fasta_seq = env.Command([], 
+#                         [], 
+#                         [fasta_seq_cmd1, fasta_seq_cmd2])
+
+linreads_dir = 'lin_reads'
+sim_lin_cmd = 'simulate_linear_trx_reads.R -f ${SOURCES[0]} -g ${SOURCES[1]} -o ${TARGETS[0].dir}'
+sim_lin = env.Command([os.path.join(linreads_dir, f) for f in ['sample_01_1.fasta', 
+                                                               'sample_01_2.fasta']], 
+                       [env['REFSEQ_DIR'], pruned_anno[0]], 
+                       ' && '.join([sim_lin_cmd, 
+                                    'rm ' + ' '.join([os.path.join(linreads_dir, f) for f in ['sample_02_1.fasta', 
+                                                                                              'sample_02_2.fasta']
+                                                     ])
+                                   ])
+                     )
+
 #########################
 ## 5. Convert FASTA into FASTQ
 #########################
@@ -153,6 +170,14 @@ pruned_anno = env.Command([os.path.join(ccp_anno_dir, f) for f in ['annotation4f
 #./utils/fasta2fastq.py reads/sim_01/sample_01_1.fasta | gzip -c > reads/sim_01/sample_01_1.fq.gz
 #./utils/fasta2fastq.py reads/sim_01/sample_01_2.fasta | gzip -c > reads/sim_01/sample_01_2.fq.gz
 #
+fasta2fastq_cmd = 'fasta2fastq.py $SOURCE | gzip -c > $TARGET'
+fasta2fastq1 = env.Command(os.path.join(linreads_dir, '${SOURCES[0].filebase}.fq.gz'), #'sample_01_1.fq.gz'
+                           sim_lin[0], 
+                           fasta2fastq_cmd)
+fasta2fastq2 = env.Command(os.path.join(linreads_dir, '${SOURCES[0].filebase}.fq.gz'),
+                           sim_lin[1], 
+                           fasta2fastq_cmd)
+                           
 #########################
 ## 6. concatenate circular and linear reads
 #########################
