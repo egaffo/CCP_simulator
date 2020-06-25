@@ -6,7 +6,7 @@ mkdir -p $CCPSIM_HOME/bin
 
 export PATH=$CCPSIM_HOME/bin/:$PATH
 ## export environment variable for local R repository
-export R_LIBS=$CCPSIM_HOME/tools/R_libs
+export R_LIBS=$CCPSIM_HOME/bin/R_libs
 
 ## install Scons
 cd $CCPSIM_HOME/bin;
@@ -23,4 +23,4 @@ ln -sf ../utils/*.R .
 cd -
 
 ## install other tools
-$CCPSIM_HOME/bin/scons -i -f $CCPSIM_HOME/scons/install.py $1
+$CCPSIM_HOME/bin/scons -f $CCPSIM_HOME/scons/install.py $1
