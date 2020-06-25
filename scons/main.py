@@ -7,10 +7,10 @@ vars.Add('CIRI_SIM_EXEC',
          None)
 vars.Add('GENE_ANNO', 
          'Input GTF formatted annotation file name', 
-         '/blackhole/circrna/analyses/ccp_tuning/annotation/gencode.v29.annotation.gtf')
+         'annotation/gencode.v29.annotation.gtf')
 vars.Add('REFSEQ_DIR', 
          'Directory of reference sequence(s)', 
-         '/blackhole/circrna/analyses/ccp_tuning/annotation/')
+         'annotation/')
 vars.Add('CIRI_SIM_OPT', 
          'Options for the CIRI_simulator.pl script', 
          None)
