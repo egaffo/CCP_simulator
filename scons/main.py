@@ -184,7 +184,10 @@ fasta2fastq2 = env.Command(os.path.join(linreads_dir, '${SOURCES[0].filebase}.fq
 # cat reads/sim_01/cirias_1.fq.gz reads/sim_01/sample_01_1.fq.gz > reads/sim_01/sim_ribo_01_1.fq.gz
 # cat reads/sim_01/cirias_2.fq.gz reads/sim_01/sample_01_2.fq.gz > reads/sim_01/sim_ribo_01_2.fq.gz
 
-cat_reads_cmd = 'cat ${SOURCES[0]} ${SOURCES[1]} > $TARGET'
+## with the following commad we also substitute semicolon characters from the
+## read names, since semicolons could break some script in CCP. 
+## No need for an elaborate regexp since read qualities are all ! char
+cat_reads_cmd = 'zcat ${SOURCES[0]} ${SOURCES[1]} | sed "s/;/|/g" | gzip -c > $TARGET'
 
 ccp_reads_dir = 'ccp_reads'
 cat_reads_1 = env.Command(os.path.join(ccp_reads_dir, 'sim_ribodplt_1.fq.gz'), 
