@@ -15,6 +15,20 @@ vars.Add('CIRI_SIM_OPT',
          'Options for the CIRI_simulator.pl script', 
          None)
 
+vars.Add('ANNOPARTS', 
+         'Fractions of annotation to assign to each circular/linear transcript annotation combination\n'\
+         'case |   circRNA   | linear trx | linear trx | notes\n'\
+         '     |  expression | expression | annotation |\n'\
+         '---------------------------------------------|---------------------------------\n'\
+         '  1  |  yes        | yes        | yes        | circRNA from expressed known trx\n'\
+         '  2  |  yes        | yes        | no         | circRNA from novel trx\n'\
+         '  3  |  yes        | no         | yes        | only circRNA from known trx\n'\
+         '  4  |  yes        | no         | no         | novel circRNA gene\n'\
+         '  5  |  no         | yes        | yes        | just no circRNA\n'\
+         '  6  |  no         | yes        | no         | only novel trx\n'\
+         '  7  |  no         | no         | yes        | known trx not expressed', 
+         '85,5,5,2.5,1,1,0.5')
+
 env = Environment(ENV=os.environ, SHELL = '/bin/bash',
                   variables=vars)
 
@@ -127,7 +141,8 @@ cirisim_trx = env.Command(cirisim_trx_tgt,
 # 3. generate the transcripts FASTA(s) #
 ########################################
 ccp_anno_dir = 'ccp_anno'
-pruned_anno_cmd = 'parent_gene_fasta.py -t ${SOURCES[0]} -g ${SOURCES[1]} -b $BIOTYPE -o ' + ccp_anno_dir
+pruned_anno_cmd = 'parent_gene_fasta.py -t ${SOURCES[0]} '\
+                  '-g ${SOURCES[1]} -p "$ANNOPARTS" -b $BIOTYPE -o ' + ccp_anno_dir
 pruned_anno = env.Command([os.path.join(ccp_anno_dir, f) for f in ['annotation4fasta.gtf', 
                                                                    'annotation4simulations.gtf', 
                                                                    'summary.txt']], 
