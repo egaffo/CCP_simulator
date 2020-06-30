@@ -21,13 +21,17 @@ CIRISIM = env.Command(CIRISIM_target, [], ['wget -O ${TARGETS[0]} ' + CIRISIM_li
 
 ## Polyester
 
-# Bioconductor: Polyester
-
 env['ENV']['R_LIBS'] = os.path.join(ccp_bin_dir, "R_libs")
-polyester_cmd = '''R -e 'if (!requireNamespace("BiocManager", quietly=TRUE)){install.packages("BiocManager")}; BiocManager::install("polyester")' '''
 
+polyester_cmd = '''R -e 'if (!requireNamespace("BiocManager", quietly=TRUE)){install.packages("BiocManager")}; BiocManager::install("polyester")' '''
 polyester_targets = [os.path.join(ccp_bin_dir, 'R_libs', 'polyester', 'R', 'polyester')]
 polyester = env.Command(polyester_targets, 
                         [], 
                         polyester_cmd)
+
+optparse_cmd = '''R -e 'install.packages("optparse")' '''
+optparse_targets = [os.path.join(ccp_bin_dir, 'R_libs', 'optparse', 'R', 'optparse')]
+optparse = env.Command(optparse_targets, 
+                       [], 
+                       optparse_cmd)
 
